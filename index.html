@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP & Node.js Trainer</title>
+    <style>
+        :root { --primary: #2563eb; --success: #22c55e; --error: #ef4444; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); line-height: 1.6; padding: 20px; color: #1e293b; }
+        .container { max-width: 900px; margin: auto; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h2, h3 { margin-top: 0; color: var(--primary); }
+        
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9em; }
+        select, input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        select:focus, input:focus { border-color: var(--primary); outline: none; }
+        
+        button { width: 100%; background: var(--primary); color: white; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
+
+        #response-area { margin-top: 20px; background: #1e293b; color: #f8fafc; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; overflow-x: auto; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
+        
+        .achievements { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .task { display: flex; align-items: center; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #f1f5f9; font-size: 0.85em; }
+        .task.completed { background: #dcfce7; text-decoration: line-through; color: #166534; }
+        .checkbox { width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 4px; margin-right: 12px; display: flex; align-items: center; justify-content: center; background: white; }
+        .task.completed .checkbox::after { content: '✓'; font-weight: bold; }
+
+        .lecture-note { font-size: 0.8em; color: #64748b; margin-top: 15px; font-style: italic; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="main-panel">
+        <div class="card">
+            <h2>🚀 HTTP Node.js Simulator</h2>
+            <p>Симулюй роботу сервера з лекції №3. Налаштуй запит і перевір реакцію сервера.</p>
+            
+            <div class="input-group">
+                <label>Метод (req.method):</label>
+                <select id="method">
+                    <option value="GET">GET (Отримати дані)</option>
+                    <option value="POST">POST (Надіслати/Створити)</option>
+                    <option value="DELETE">DELETE (Видалити)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>URL шлях (req.url):</label>
+                <input type="text" id="url" placeholder="/api/items?id=10" value="/api/hello">
+            </div>
+
+            <button onclick="handleRequest()">Надіслати запит (Request)</button>
+
+            <div id="response-area">
+                // Тут з'явиться відповідь сервера (Response)
+            </div>
+            
+            <div class="lecture-note">
+                Підказка: Сервер у Node.js обробляє запити через об'єкт <code>req</code> і відповідає через <code>res</code>.
+            </div>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="achievements">
+            <h3>Завдання (Labs)</h3>
+            
+            <div id="task1" class="task">
+                <div class="checkbox"></div>
+                <span><b>Привітання:</b> GET на /api/hello </span>
+            </div>
+
+            <div id="task2" class="task">
+                <div class="checkbox"></div>
+                <span><b>Пошук:</b> Використовуй параметри /api/search?query=phone </span>
+            </div>
+
+            <div id="task3" class="task">
+                <div class="checkbox"></div>
+                <span><b>Безпека:</b> Спробуй зайти на /admin (очікуй 401) </span>
+            </div>
+
+            <div id="task4" class="task">
+                <div class="checkbox"></div>
+                <span><b>Створення:</b> Надішліть POST на /api/data </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleRequest() {
+        const method = document.getElementById('method').value;
+        const rawUrl = document.getElementById('url').value;
+        const responseArea = document.getElementById('response-area');
+        
+        // Імітація модуля url.parse(req.url, true) 
+        const urlParts = rawUrl.split('?');
+        const path = urlParts[0];
+        const queryString = urlParts[1] || "";
+        const queryParams = {};
+        if (queryString) {
+            queryString.split('&').forEach(pair => {
+                const [key, val] = pair.split('=');
+                if (key) queryParams[key] = decodeURIComponent(val || "");
+            });
+        }
+
+        let res = {
+            status: 404,
+            statusText: "Not Found",
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+            body: "Помилка 404: Маршрут не знайдено"
+        };
+
+        // Логіка "сервера" (routing)
+        if (method === 'GET' && path === '/api/hello') {
+            res.status = 200;
+            res.statusText = "OK";
+            res.headers["Content-Type"] = "application/json";
+            res.body = JSON.stringify({ message: "Привіт! Це Node.js сервер " }, null, 2);
+            completeTask('task1');
+        } 
+        else if (method === 'GET' && path === '/api/search') {
+            res.status = 200;
+            res.statusText = "OK";
+            res.headers["Content-Type"] = "application/json";
+            res.body = JSON.stringify({ 
+                results: "Пошук завершено", 
+                foundParams: queryParams // req.query 
+            }, null, 2);
+            if (Object.keys(queryParams).length > 0) completeTask('task2');
+        }
+        else if (path === '/admin') {
+            res.status = 401;
+            res.statusText = "Unauthorized";
+            res.body = "401: Доступ заборонено без токена Authorization ";
+            completeTask('task3');
+        }
+        else if (method === 'POST' && path === '/api/data') {
+            res.status = 201;
+            res.statusText = "Created";
+            res.headers["Content-Type"] = "application/json";
+            res.body = JSON.stringify({ success: true, message: "Ресурс створено " }, null, 2);
+            completeTask('task4');
+        }
+
+        renderResponse(res);
+    }
+
+    function renderResponse(res) {
+        const area = document.getElementById('response-area');
+        const statusColor = res.status < 400 ? 'var(--success)' : 'var(--error)';
+        
+        area.innerHTML = `
+<div class="status-badge" style="background: ${statusColor}">HTTP ${res.status} ${res.statusText}</div>
+<div><b>Headers:</b> ${JSON.stringify(res.headers, null, 2)}</div>
+<div style="margin-top: 10px; color: #94a3b8;">// Body:</div>
+<div style="color: #60a5fa">${res.body}</div>
+        `;
+    }
+
+    function completeTask(id) {
+        document.getElementById(id).classList.add('completed');
+    }
+</script>
+
+</body>
+</html>
